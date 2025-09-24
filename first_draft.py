@@ -26,12 +26,11 @@ def is_disaster_related(query: str) -> bool:
     query = query.lower()
     return any(keyword in query for keyword in disaster_keywords)
 
-# ✅ Chatbot instructions
-print("🛡️ Aegis Bot - Disaster Awareness Assistant")
-print("💬 Ask your questions related to natural disasters or calamities.")
-print("❌ Type 'exit' to quit.\n")
+print(" Aegis Bot - Disaster Awareness Assistant")
+print(" Ask your questions related to natural disasters or calamities.")
+print(" Type 'exit' to quit.\n")
 
-# ✅ Chat loop
+
 while True:
     user_input = input("You: ")
 
