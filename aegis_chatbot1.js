@@ -1,6 +1,7 @@
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const open = require('open').default;
+require('dotenv').config();
 
 
 const app = express();
@@ -32,9 +33,9 @@ function isDisasterRelated(query) {
         "typhoon", "pandemic", "epidemic", "rescue", "disaster relief",
         "safety", "preparedness", "alert", "storm", "aftershock", "evacuate",
         "natural hazard", "seismic", "aftershocks", "contingency", "disaster response",
-        "aid", "relief", "response team", "shelter", "survival kit", "emergency bag",
-        "warning", "natural event", "climate disaster", "flash flood", "wildfire",
-        "heatwave", "tornado", "mudslide", "disaster zone", "help","stuck", "trapped","SOS"
+        "aid", "relief", "response team", "shelter", "survival kit", "emergency bag","hi",
+        "warning", "natural event", "climate disaster", "flash flood", "wildfire","bye",
+        "heatwave", "tornado", "mudslide", "disaster zone", "help","stuck", "trapped","SOS","hello"
     ];
     
     const lowercaseQuery = query.toLowerCase();
