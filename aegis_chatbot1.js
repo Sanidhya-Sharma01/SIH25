@@ -12,7 +12,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-//const GOOGLE_API_KEY = "AIzaSyDrAw15-Woz-qAvv6T9Eld9YNtSa0vjfQM";
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 if (!GOOGLE_API_KEY) {
     console.error("Error: GOOGLE_API_KEY environment variable not set.");
