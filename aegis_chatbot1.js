@@ -2,17 +2,22 @@ const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const open = require('open').default;
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 const GOOGLE_API_KEY = "AIzaSyDrAw15-Woz-qAvv6T9Eld9YNtSa0vjfQM";
 const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+
 let conversationMemory = [];
+
 
 function isDisasterRelated(query) {
     const disasterKeywords = [
@@ -31,6 +36,7 @@ function isDisasterRelated(query) {
     return disasterKeywords.some(keyword => lowercaseQuery.includes(keyword));
 }
 
+
 function addToMemory(user, bot) {
     conversationMemory.push({ user, bot, timestamp: new Date() });
     if (conversationMemory.length > 3) {
@@ -38,11 +44,13 @@ function addToMemory(user, bot) {
     }
 }
 
+
 function getMemoryContext() {
     return conversationMemory
         .map(conv => `User: ${conv.user}\nBot: ${conv.bot}`)
         .join('\n\n');
 }
+
 
 const HTML_TEMPLATE = `
 <!DOCTYPE html>
@@ -65,7 +73,7 @@ const HTML_TEMPLATE = `
             right: 20px;
             width: 300px;
             height: 40px;
-            background: #007BFF;
+            background: #202223ff;
             border-radius: 20px;
             color: white;
             cursor: pointer;
@@ -85,6 +93,27 @@ const HTML_TEMPLATE = `
             cursor: default;
         }
         
+        #close-btn {
+            display: none;
+            position: absolute;
+            top: 10px;
+            right: 5px;
+            
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4757;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        #chat-widget.open #close-btn {
+            display: block;
+        }
+        
         #chat-icon {
             width: 30px;
             height: 30px;
@@ -96,7 +125,7 @@ const HTML_TEMPLATE = `
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            color: #007BFF;
+            color: #060606ff;
         }
         
         #chat-title {
@@ -112,7 +141,7 @@ const HTML_TEMPLATE = `
             display: none;
             flex-direction: column;
             overflow-y: auto;
-            background-color: #f9f9f9;
+            background-color: #504d4dff;
             color: #333;
             border-radius: 10px;
             padding: 10px;
@@ -152,7 +181,7 @@ const HTML_TEMPLATE = `
         }
         
         .bot-message {
-            background-color: #007BFF;
+            background-color: #141415ff;
             color: white;
             align-self: flex-start;
             margin-right: auto;
@@ -196,11 +225,11 @@ const HTML_TEMPLATE = `
         }
         
         #user-input input:focus {
-            border-color: #007BFF;
+            border-color: #fd0623ff;
         }
         
         #user-input button {
-            background-color: #007BFF;
+            background-color: #303132ff;
             border: none;
             color: white;
             padding: 10px 16px;
@@ -248,8 +277,9 @@ const HTML_TEMPLATE = `
 </head>
 <body>
     <div id="chat-widget">
+        <button id="close-btn" onclick="closeChat()">&times;</button>
         <div id="chat-icon">🤖</div>
-        <div id="chat-title">aegis ai</div>
+        <div id="chat-title">Aegis Ai </div>
         <div id="chat-content">
             <div class="memory-indicator">💭 Remembers last 3 conversations</div>
             <div id="message-area">
@@ -264,18 +294,24 @@ const HTML_TEMPLATE = `
         </div>
     </div>
 
+
     <script>
         const widget = document.getElementById('chat-widget');
         const messageArea = document.getElementById('message-area');
         const inputBox = document.getElementById('input-box');
         const sendBtn = document.getElementById('send-btn');
 
-        widget.addEventListener('click', () => {
-            if (!widget.classList.contains('open')) {
+        function closeChat() {
+            widget.classList.remove('open');
+        }
+
+        widget.addEventListener('click', (event) => {
+            if (!widget.classList.contains('open') && event.target.id !== 'close-btn') {
                 widget.classList.add('open');
                 setTimeout(() => inputBox.focus(), 300);
             }
         });
+
 
         function appendMessage(text, sender, isLoading = false) {
             const messageDiv = document.createElement('div');
@@ -294,17 +330,21 @@ const HTML_TEMPLATE = `
             return messageDiv;
         }
 
+
         async function sendMessage(event) {
             event.preventDefault();
             const userText = inputBox.value.trim();
             if (!userText) return;
 
+
             inputBox.disabled = true;
             sendBtn.disabled = true;
             sendBtn.textContent = 'Sending...';
 
+
             appendMessage(userText, 'user');
             inputBox.value = '';
+
 
             if (userText.toLowerCase() === 'exit') {
                 appendMessage('Goodbye! Stay safe.', 'bot');
@@ -313,7 +353,9 @@ const HTML_TEMPLATE = `
                 return;
             }
 
+
             const loadingMsg = appendMessage('Thinking...', 'bot', true);
+
 
             try {
                 const response = await fetch('/chat', {
@@ -337,6 +379,7 @@ const HTML_TEMPLATE = `
             }
         }
 
+
         inputBox.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -348,10 +391,12 @@ const HTML_TEMPLATE = `
 </html>
 `;
 
+
 // API Routes
 app.get('/', (req, res) => {
     res.send(HTML_TEMPLATE);
 });
+
 
 app.post('/chat', async (req, res) => {
     try {
@@ -371,18 +416,24 @@ app.post('/chat', async (req, res) => {
         
         const memoryContext = getMemoryContext();
         const systemPrompt = `You are Aegis Bot, a disaster awareness assistant. Answer ONLY disaster-related questions.
-        
-        Previous conversation context:
-        ${memoryContext}
-        
-        Instructions:
-        - Answer in short bullet points (6-10 points max)
-        - Each bullet point should be under 10 words
-        - Keep total answer under 100 words
-        - No paragraphs, headings, or long explanations
-        
-        Question: ${userInput}`;
-        
+
+Previous conversation context:  
+${memoryContext}
+
+FORMAT EACH RESPONSE LIKE THIS EXAMPLE:
+- Move to higher ground
+- Avoid floodwater  
+- Turn off utilities
+- Have emergency kit ready
+
+STRICT RULES:
+- Each bullet starts new line
+- Use hyphen-space format: "- "  
+- Maximum 10 words per bullet
+- 6-10 bullets total
+- Under 100 words total
+
+Question: ${userInput}`;
         const result = await model.generateContent(systemPrompt);
         const botResponse = result.response.text().trim();
         
@@ -402,6 +453,7 @@ app.post('/chat', async (req, res) => {
     }
 });
 
+
 app.get('/memory', (req, res) => {
     try {
         const memoryData = {
@@ -414,6 +466,7 @@ app.get('/memory', (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 });
+
 
 app.post('/clear_memory', (req, res) => {
     try {
@@ -428,6 +481,7 @@ app.post('/clear_memory', (req, res) => {
     }
 });
 
+
 app.listen(PORT, () => {
     console.log('🤖 Aegis Bot - Disaster Awareness Assistant with Memory');
     console.log('📝 Memory Buffer: Remembers last 3 conversations');
@@ -438,6 +492,7 @@ app.listen(PORT, () => {
         open(`http://localhost:${PORT}`);
     }, 1000);
 });
+
 
 process.on('SIGINT', () => {
     console.log('\n🔄 Shutting down Aegis AI gracefully...');
