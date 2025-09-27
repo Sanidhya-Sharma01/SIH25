@@ -25,6 +25,7 @@ let conversationMemory = [];
 
 
 function isDisasterRelated(query) {
+
     const disasterKeywords = [
         "earthquake", "flood", "tsunami", "disaster", "cyclone",
         "landslide", "natural calamity", "emergency", "first aid",
@@ -38,8 +39,54 @@ function isDisasterRelated(query) {
     ];
     
     const lowercaseQuery = query.toLowerCase();
-    return disasterKeywords.some(keyword => lowercaseQuery.includes(keyword));
+    
+    // Direct keyword match
+    if (disasterKeywords.some(keyword => lowercaseQuery.includes(keyword))) {
+        return true;
+    }
+    
+    // Context-based detection for follow-up questions
+    const followUpIndicators = [
+        "now tell me", "what about", "for elderly", "for children", 
+        "for people with", "in that case", "also tell", "and for",
+        "how about", "what if", "can you explain", "more details",
+        "specifically for", "in particular", "especially for"
+    ];
+    
+    // Check if it's a follow-up question
+    const isFollowUp = followUpIndicators.some(indicator => 
+        lowercaseQuery.includes(indicator)
+    );
+    
+    if (isFollowUp && conversationMemory.length > 0) {
+        // Check if recent conversation contained disaster-related content
+        const recentMessages = conversationMemory.slice(-2);
+        const recentContent = recentMessages
+            .map(conv => `${conv.user} ${conv.bot}`)
+            .join(' ')
+            .toLowerCase();
+            
+        return disasterKeywords.some(keyword => recentContent.includes(keyword));
+    }
+    
+    return false;
 }
+//     const disasterKeywords = [
+//         "earthquake", "flood", "tsunami", "disaster", "cyclone",
+//         "landslide", "natural calamity", "emergency", "first aid",
+//         "evacuation", "fire", "drought", "volcano", "hurricane",
+//         "typhoon", "pandemic", "epidemic", "rescue", "disaster relief",
+//         "safety", "preparedness", "alert", "storm", "aftershock", "evacuate",
+//         "natural hazard", "seismic", "aftershocks", "contingency", "disaster response",
+//         "aid", "relief", "response team", "shelter", "survival kit", "emergency bag","hi",
+//         "warning", "natural event", "climate disaster", "flash flood", "wildfire","bye",
+//         "heatwave", "tornado", "mudslide", "disaster zone", "help","stuck", "trapped","SOS","hello"
+//     ];
+    
+    
+//     const lowercaseQuery = query.toLowerCase();
+//     return disasterKeywords.some(keyword => lowercaseQuery.includes(keyword));
+// }
 
 
 function addToMemory(user, bot) {
@@ -413,7 +460,7 @@ app.post('/chat', async (req, res) => {
         
         const userInput = message.trim();
         
-        if (!isDisasterRelated(userInput)) {
+         if (!isDisasterRelated(userInput, conversationMemory)) {//changed something here
             const response = "I'm only trained to assist with disaster-related topics.";
             addToMemory(userInput, response);
             return res.json({ response, is_disaster_related: false });
