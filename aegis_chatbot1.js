@@ -24,7 +24,8 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 let conversationMemory = [];
 
 
-function isDisasterRelated(query) {
+ function isDisasterRelated(query, conversationMemory) {
+ 
 
     const disasterKeywords = [
         "earthquake", "flood", "tsunami", "disaster", "cyclone",
