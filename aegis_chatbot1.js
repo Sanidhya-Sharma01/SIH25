@@ -25,8 +25,6 @@ let conversationMemory = [];
 
 
  function isDisasterRelated(query, conversationMemory) {
- 
-
     const disasterKeywords = [
         "earthquake", "flood", "tsunami", "disaster", "cyclone",
         "landslide", "natural calamity", "emergency", "first aid",
@@ -41,37 +39,32 @@ let conversationMemory = [];
     
     const lowercaseQuery = query.toLowerCase();
     
-    // Direct keyword match
+    // Check current message for disaster keywords
     if (disasterKeywords.some(keyword => lowercaseQuery.includes(keyword))) {
         return true;
     }
     
-    // Context-based detection for follow-up questions
-    const followUpIndicators = [
-        "now tell me", "what about", "for elderly", "for children", 
-        "for people with", "in that case", "also tell", "and for",
-        "how about", "what if", "can you explain", "more details",
-        "specifically for", "in particular", "especially for"
-    ];
+    // Check if we have any conversation history
+    if (!conversationMemory || conversationMemory.length === 0) {
+        return false;
+    }
     
-    // Check if it's a follow-up question
-    const isFollowUp = followUpIndicators.some(indicator => 
-        lowercaseQuery.includes(indicator)
-    );
-    
-    if (isFollowUp && conversationMemory.length > 0) {
-        // Check if recent conversation contained disaster-related content
-        const recentMessages = conversationMemory.slice(-2);
-        const recentContent = recentMessages
-            .map(conv => `${conv.user} ${conv.bot}`)
-            .join(' ')
-            .toLowerCase();
-            
-        return disasterKeywords.some(keyword => recentContent.includes(keyword));
+    // Check ALL previous conversations for disaster keywords
+    for (const conv of conversationMemory) {
+        const userText = conv.user ? conv.user.toLowerCase() : '';
+        const botText = conv.bot ? conv.bot.toLowerCase() : '';
+        const allText = userText + ' ' + botText;
+        
+        // If any previous conversation contains disaster keywords, allow current question
+        if (disasterKeywords.some(keyword => allText.includes(keyword))) {
+            return true;
+        }
     }
     
     return false;
 }
+
+
 //     const disasterKeywords = [
 //         "earthquake", "flood", "tsunami", "disaster", "cyclone",
 //         "landslide", "natural calamity", "emergency", "first aid",
@@ -468,25 +461,30 @@ app.post('/chat', async (req, res) => {
         }
         
         const memoryContext = getMemoryContext();
-        const systemPrompt = `You are Aegis Bot, a disaster awareness assistant. Answer ONLY disaster-related questions.
+        const systemPrompt = `You are Aegis Bot, a specialized AI assistant for disaster awareness and safety. Your primary purpose is to provide accurate and helpful information about disasters.
 
-Previous conversation context:  
+Previous conversation context:
 ${memoryContext}
 
-FORMAT EACH RESPONSE LIKE THIS EXAMPLE:
-- Move to higher ground
-- Avoid floodwater  
-- Turn off utilities
-- Have emergency kit ready
+RESPONSE GUIDELINES:
 
-STRICT RULES:
-- Each bullet starts new line
-- Use hyphen-space format: "- "  
-- Maximum 10 words per bullet
-- 6-10 bullets total
-- Under 100 words total
+1.  **Analyze the User's Intent:** First, determine what the user is asking for.
+    - Is it a request for safety procedures? (e.g., "What to do in a flood?")
+    - Is it a request for factual information? (e.g., "How many times did floods occur in India after 2000?")
+    - Is the question unrelated to disasters?
 
-Question: ${userInput}`;
+2.  **For Safety Procedure Questions:** If the user asks what to do or for safety advice, respond with a list of actions.
+    - Use a hyphen-space format for each bullet point ("- ").
+    - Each bullet must start on a new line.
+    - Keep each bullet under 10 words.
+    - Provide between 6 and 10 bullets.
+
+3.  **For Factual Questions:** If the user asks for facts, statistics, history, or definitions, answer directly in a clear, concise sentence or two.
+    - **Do not** use the bullet point format for these answers. Provide the factual information directly.
+
+4.  **For Off-Topic Questions:** If the question is not about disasters, politely decline by stating: "As Aegis Bot, my purpose is to answer questions related to disaster awareness and safety."
+
+User Question: ${userInput}`;
         const result = await model.generateContent(systemPrompt);
         const botResponse = result.response.text().trim();
         
